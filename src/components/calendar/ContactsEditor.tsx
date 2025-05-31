@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Modal } from '../ui/Modal';
 
 interface EventContact {
   id: string;
@@ -21,7 +20,7 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
   contacts,
   onChange
 }) => {
-  const [showModal, setShowModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<EventContact | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -47,7 +46,7 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
     { value: 'Other', label: 'Other' }
   ];
 
-  const openContactModal = (contact?: EventContact) => {
+  const openContactForm = (contact?: EventContact) => {
     if (contact) {
       setEditingContact(contact);
       setFormData({
@@ -65,7 +64,7 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
         role: 'Other'
       });
     }
-    setShowModal(true);
+    setShowForm(true);
   };
 
   const saveContact = () => {
@@ -85,78 +84,55 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
       onChange([...contacts, contact]);
     }
 
-    setShowModal(false);
+    setShowForm(false);
+    resetForm();
   };
 
   const removeContact = (id: string) => {
     onChange(contacts.filter(c => c.id !== id));
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      role: 'Other'
+    });
+    setEditingContact(null);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    resetForm();
+  };
+
   return (
-    <>
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-700">Additional Contacts</span>
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-gray-700">Additional Contacts</span>
+        {!showForm && (
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => openContactModal()}
+            onClick={() => openContactForm()}
           >
             + Add Contact
           </Button>
-        </div>
-
-        {contacts.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">No additional contacts</p>
-        ) : (
-          <div className="space-y-2">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{contact.name}</div>
-                  <div className="text-xs text-gray-600">{contact.role}</div>
-                  {contact.email && (
-                    <div className="text-xs text-gray-500">{contact.email}</div>
-                  )}
-                  {contact.phone && (
-                    <div className="text-xs text-gray-500">{contact.phone}</div>
-                  )}
-                </div>
-                <div className="flex space-x-1">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => openContactModal(contact)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    onClick={() => removeContact(contact.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
         )}
       </div>
 
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingContact ? 'Edit Contact' : 'Add Contact'}
-      >
-        <div className="space-y-4">
+      {showForm && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+          <h4 className="font-medium text-gray-900">
+            {editingContact ? 'Edit Contact' : 'Add New Contact'}
+          </h4>
+          
           <Input
             label="Name *"
             value={formData.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             placeholder="Contact name"
           />
 
@@ -164,7 +140,7 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
             label="Email"
             type="email"
             value={formData.email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             placeholder="contact@example.com"
           />
 
@@ -172,22 +148,29 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
             label="Phone"
             type="tel"
             value={formData.phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             placeholder="+1234567890"
           />
 
           <Select
             label="Role"
             value={formData.role}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
             options={roleOptions}
           />
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
+          <div className="flex justify-end space-x-2 pt-2">
+            <Button 
+              type="button"
+              variant="secondary" 
+              size="sm"
+              onClick={cancelForm}
+            >
               Cancel
             </Button>
             <Button 
+              type="button"
+              size="sm"
               onClick={saveContact}
               disabled={!formData.name.trim()}
             >
@@ -195,7 +178,48 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
             </Button>
           </div>
         </div>
-      </Modal>
-    </>
+      )}
+
+      {contacts.length === 0 && !showForm ? (
+        <p className="text-sm text-gray-500 italic">No additional contacts</p>
+      ) : (
+        <div className="space-y-2">
+          {contacts.map((contact) => (
+            <div key={contact.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <div className="font-medium text-sm">{contact.name}</div>
+                <div className="text-xs text-gray-600">{contact.role}</div>
+                {contact.email && (
+                  <div className="text-xs text-gray-500">{contact.email}</div>
+                )}
+                {contact.phone && (
+                  <div className="text-xs text-gray-500">{contact.phone}</div>
+                )}
+              </div>
+              <div className="flex space-x-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openContactForm(contact)}
+                  disabled={showForm}
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  onClick={() => removeContact(contact.id)}
+                  disabled={showForm}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };

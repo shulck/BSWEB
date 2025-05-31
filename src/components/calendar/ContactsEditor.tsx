@@ -156,7 +156,7 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
           <Input
             label="Name *"
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             placeholder="Contact name"
           />
 
@@ -164,7 +164,7 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
             label="Email"
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             placeholder="contact@example.com"
           />
 
@@ -172,14 +172,14 @@ export const ContactsEditor: React.FC<ContactsEditorProps> = ({
             label="Phone"
             type="tel"
             value={formData.phone}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             placeholder="+1234567890"
           />
 
           <Select
             label="Role"
             value={formData.role}
-            onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(prev => ({ ...prev, role: e.target.value }))}
             options={roleOptions}
           />
 

@@ -37,7 +37,7 @@ export const ChatCreation: React.FC<ChatCreationProps> = ({ isOpen, onClose }) =
     if (isOpen && currentUser?.groupId) {
       fetchGroupMembers();
     }
-  }, [isOpen, fetchGroupMembers]);
+  }, [isOpen, currentUser?.groupId, fetchGroupMembers]);
 
   const handleCreateGroupChat = async () => {
     if (!currentUser || !chatName.trim() || selectedMembers.length === 0) return;

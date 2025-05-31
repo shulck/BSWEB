@@ -45,7 +45,7 @@ export const EventForm: React.FC<EventFormProps> = ({
     hotelCheckIn: new Date(),
     hotelCheckOut: new Date(),
     fee: '',
-    currency: 'USD',
+    currency: 'EUR',
     notes: '',
     organizerName: '',
     organizerEmail: '',
@@ -75,7 +75,7 @@ export const EventForm: React.FC<EventFormProps> = ({
         hotelCheckIn: event.hotelCheckIn || new Date(),
         hotelCheckOut: event.hotelCheckOut || new Date(),
         fee: event.fee?.toString() || '',
-        currency: event.currency || 'USD',
+        currency: event.currency || 'EUR',
         notes: event.notes || '',
         organizerName: event.organizerName || '',
         organizerEmail: event.organizerEmail || '',
@@ -98,6 +98,14 @@ export const EventForm: React.FC<EventFormProps> = ({
 
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
+    }
+
+    if (formData.organizerEmail && !/\S+@\S+\.\S+/.test(formData.organizerEmail)) {
+      newErrors.organizerEmail = 'Invalid email format';
+    }
+
+    if (formData.coordinatorEmail && !/\S+@\S+\.\S+/.test(formData.coordinatorEmail)) {
+      newErrors.coordinatorEmail = 'Invalid email format';
     }
 
     setErrors(newErrors);
@@ -140,6 +148,25 @@ export const EventForm: React.FC<EventFormProps> = ({
     return EventService.generateRecurringEvents(baseEvent, endDate);
   };
 
+  const calculateNumberOfEvents = () => {
+    if (!isRecurring) return 1;
+    
+    const start = new Date(formData.date);
+    const end = new Date(endDate);
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(1, diffDays + 1);
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -163,10 +190,12 @@ export const EventForm: React.FC<EventFormProps> = ({
   const showCoordinatorSection = [EventType.CONCERT, EventType.FESTIVAL].includes(formData.type);
   const showAccommodationSection = [EventType.CONCERT, EventType.FESTIVAL, EventType.PHOTOSHOOT].includes(formData.type);
   const showFeeSection = [EventType.CONCERT, EventType.FESTIVAL, EventType.INTERVIEW, EventType.PHOTOSHOOT].includes(formData.type);
+  const showAdditionalContactsSection = [EventType.CONCERT, EventType.FESTIVAL].includes(formData.type);
 
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Event Title*"
@@ -198,6 +227,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           />
         </div>
 
+        {/* Recurring Events - only for new events */}
         {!event && (
           <RecurringEventOptions
             isRecurring={isRecurring}
@@ -208,96 +238,37 @@ export const EventForm: React.FC<EventFormProps> = ({
           />
         )}
 
-        <div>
-          <LocationPicker
-            value={formData.location}
-            onChange={(location) => setFormData(prev => ({ ...prev, location }))}
-            placeholder="Event location"
-          />
-        </div>
+        {/* Preview of recurring events */}
+        {isRecurring && (
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h3 className="text-md font-medium text-blue-900 mb-2">Recurring Events Preview</h3>
+            <p className="text-sm text-blue-800">
+              This will create <strong>{calculateNumberOfEvents()}</strong> events from{' '}
+              <strong>{formatDate(formData.date)}</strong> to{' '}
+              <strong>{formatDate(endDate)}</strong>
+            </p>
+            {calculateNumberOfEvents() > 30 && (
+              <p className="text-sm text-orange-600 mt-2">
+                ⚠️ Creating many events may affect performance
+              </p>
+            )}
+          </div>
+        )}
 
+        {/* Location using existing LocationPicker */}
+        <LocationPicker
+          value={formData.location}
+          onChange={(location) => setFormData(prev => ({ ...prev, location }))}
+          placeholder="Event location"
+        />
+
+        {/* Schedule using existing ScheduleEditor */}
         <ScheduleEditor
           schedule={schedule}
           onChange={setSchedule}
         />
 
-        {showOrganizerSection && (
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Organizer Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                label="Name"
-                value={formData.organizerName}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizerName: e.target.value }))}
-                placeholder="Organizer name"
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={formData.organizerEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizerEmail: e.target.value }))}
-                placeholder="organizer@example.com"
-              />
-              <Input
-                label="Phone"
-                type="tel"
-                value={formData.organizerPhone}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizerPhone: e.target.value }))}
-                placeholder="+1234567890"
-              />
-            </div>
-          </div>
-        )}
-
-        {showCoordinatorSection && (
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Coordinator Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                label="Name"
-                value={formData.coordinatorName}
-                onChange={(e) => setFormData(prev => ({ ...prev, coordinatorName: e.target.value }))}
-                placeholder="Coordinator name"
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={formData.coordinatorEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, coordinatorEmail: e.target.value }))}
-                placeholder="coordinator@example.com"
-              />
-              <Input
-                label="Phone"
-                type="tel"
-                value={formData.coordinatorPhone}
-                onChange={(e) => setFormData(prev => ({ ...prev, coordinatorPhone: e.target.value }))}
-                placeholder="+1234567890"
-              />
-            </div>
-          </div>
-        )}
-
-        <ContactsEditor
-          contacts={additionalContacts}
-          onChange={setAdditionalContacts}
-        />
-
-        {showAccommodationSection && (
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Accommodation</h3>
-            <AccommodationDetails
-              hotelName={formData.hotelName}
-              hotelAddress={formData.hotelAddress}
-              hotelCheckIn={formData.hotelCheckIn}
-              hotelCheckOut={formData.hotelCheckOut}
-              onHotelNameChange={(value) => setFormData(prev => ({ ...prev, hotelName: value }))}
-              onHotelAddressChange={(value) => setFormData(prev => ({ ...prev, hotelAddress: value }))}
-              onCheckInChange={(value) => setFormData(prev => ({ ...prev, hotelCheckIn: value }))}
-              onCheckOutChange={(value) => setFormData(prev => ({ ...prev, hotelCheckOut: value }))}
-            />
-          </div>
-        )}
-
+        {/* Fee Section */}
         {showFeeSection && (
           <div className="border-t pt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Financial Details</h3>
@@ -314,22 +285,128 @@ export const EventForm: React.FC<EventFormProps> = ({
                 label="Currency"
                 value={formData.currency}
                 onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                placeholder="USD"
+                placeholder="EUR"
               />
             </div>
           </div>
         )}
 
+        {/* Organizer Information */}
+        {showOrganizerSection && (
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Organizer Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                label="Name"
+                value={formData.organizerName}
+                onChange={(e) => setFormData(prev => ({ ...prev, organizerName: e.target.value }))}
+                placeholder="Organizer name"
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.organizerEmail}
+                onChange={(e) => setFormData(prev => ({ ...prev, organizerEmail: e.target.value }))}
+                placeholder="organizer@example.com"
+                error={errors.organizerEmail}
+              />
+              <Input
+                label="Phone"
+                type="tel"
+                value={formData.organizerPhone}
+                onChange={(e) => setFormData(prev => ({ ...prev, organizerPhone: e.target.value }))}
+                placeholder="+1234567890"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Coordinator Information */}
+        {showCoordinatorSection && (
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Coordinator Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                label="Name"
+                value={formData.coordinatorName}
+                onChange={(e) => setFormData(prev => ({ ...prev, coordinatorName: e.target.value }))}
+                placeholder="Coordinator name"
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.coordinatorEmail}
+                onChange={(e) => setFormData(prev => ({ ...prev, coordinatorEmail: e.target.value }))}
+                placeholder="coordinator@example.com"
+                error={errors.coordinatorEmail}
+              />
+              <Input
+                label="Phone"
+                type="tel"
+                value={formData.coordinatorPhone}
+                onChange={(e) => setFormData(prev => ({ ...prev, coordinatorPhone: e.target.value }))}
+                placeholder="+1234567890"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Additional Contacts using existing ContactsEditor */}
+        {showAdditionalContactsSection && (
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Contacts</h3>
+            <ContactsEditor
+              contacts={additionalContacts}
+              onChange={setAdditionalContacts}
+            />
+          </div>
+        )}
+
+        {/* Accommodation using existing AccommodationDetails */}
+        {showAccommodationSection && (
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Accommodation</h3>
+            <AccommodationDetails
+              hotelName={formData.hotelName}
+              hotelAddress={formData.hotelAddress}
+              hotelCheckIn={formData.hotelCheckIn}
+              hotelCheckOut={formData.hotelCheckOut}
+              onHotelNameChange={(value) => setFormData(prev => ({ ...prev, hotelName: value }))}
+              onHotelAddressChange={(value) => setFormData(prev => ({ ...prev, hotelAddress: value }))}
+              onCheckInChange={(value) => setFormData(prev => ({ ...prev, hotelCheckIn: value }))}
+              onCheckOutChange={(value) => setFormData(prev => ({ ...prev, hotelCheckOut: value }))}
+            />
+          </div>
+        )}
+
+        {/* Notes */}
         <div className="border-t pt-6">
           <Textarea
             label="Notes"
             value={formData.notes}
             onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
             rows={3}
-            placeholder="Additional notes..."
+            placeholder="Additional notes, special requirements, etc..."
           />
         </div>
 
+        {/* Personal Event Toggle */}
+        <div className="border-t pt-6">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isPersonal"
+              checked={formData.isPersonal}
+              onChange={(e) => setFormData(prev => ({ ...prev, isPersonal: e.target.checked }))}
+              className="h-4 w-4 text-blue-600 rounded border-gray-300"
+            />
+            <label htmlFor="isPersonal" className="ml-2 text-sm text-gray-900">
+              Personal event (visible only to you)
+            </label>
+          </div>
+        </div>
+
+        {/* Form Actions */}
         <div className="flex justify-end space-x-3 pt-6 border-t">
           <Button
             type="button"
@@ -341,8 +418,9 @@ export const EventForm: React.FC<EventFormProps> = ({
           <Button
             type="submit"
             loading={isLoading}
+            disabled={!formData.title.trim()}
           >
-            {isRecurring ? `Create ${generateRecurringEvents().length} Events` : (event ? 'Update Event' : 'Create Event')}
+            {isRecurring ? `Create ${calculateNumberOfEvents()} Events` : (event ? 'Update Event' : 'Create Event')}
           </Button>
         </div>
       </form>

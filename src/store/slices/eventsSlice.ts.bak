@@ -38,18 +38,6 @@ export const addEvent = createAsyncThunk(
   }
 );
 
-export const addRecurringEvents = createAsyncThunk(
-  'events/addRecurringEvents',
-  async (events: Omit<Event, 'id'>[], { rejectWithValue }) => {
-    try {
-      const eventIds = await EventService.addRecurringEvents(events);
-      return events.map((event, index) => ({ ...event, id: eventIds[index] }));
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
 export const updateEvent = createAsyncThunk(
   'events/updateEvent',
   async ({ eventId, event }: { eventId: string; event: Partial<Event> }, { rejectWithValue }) => {
@@ -84,6 +72,7 @@ const eventsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch events
       .addCase(fetchEvents.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -96,21 +85,11 @@ const eventsSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
+      // Add event
       .addCase(addEvent.fulfilled, (state, action) => {
         state.events.unshift(action.payload);
       })
-      .addCase(addRecurringEvents.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(addRecurringEvents.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.events.unshift(...action.payload);
-      })
-      .addCase(addRecurringEvents.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
+      // Update event
       .addCase(updateEvent.fulfilled, (state, action) => {
         const { eventId, event } = action.payload;
         const index = state.events.findIndex(e => e.id === eventId);
@@ -118,6 +97,7 @@ const eventsSlice = createSlice({
           state.events[index] = { ...state.events[index], ...event };
         }
       })
+      // Delete event
       .addCase(deleteEvent.fulfilled, (state, action) => {
         state.events = state.events.filter(e => e.id !== action.payload);
       });

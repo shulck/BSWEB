@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { createGroupChat } from '../../store/slices/chatsSlice';
 import { UserService } from '../../services/userService';
@@ -21,13 +21,7 @@ export const ChatCreation: React.FC<ChatCreationProps> = ({ isOpen, onClose }) =
   const [groupMembers, setGroupMembers] = useState<UserModel[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (isOpen && currentUser?.groupId) {
-      fetchGroupMembers();
-    }
-  }, [isOpen, currentUser?.groupId, fetchGroupMembers]);
-
-  const fetchGroupMembers = async () => {
+  const fetchGroupMembers = useCallback(async () => {
     if (!currentUser?.groupId) return;
     
     try {
@@ -37,7 +31,13 @@ export const ChatCreation: React.FC<ChatCreationProps> = ({ isOpen, onClose }) =
     } catch (error) {
       console.error('Failed to fetch group members:', error);
     }
-  };
+  }, [currentUser?.groupId, currentUser?.id]);
+
+  useEffect(() => {
+    if (isOpen && currentUser?.groupId) {
+      fetchGroupMembers();
+    }
+  }, [isOpen, fetchGroupMembers]);
 
   const handleCreateGroupChat = async () => {
     if (!currentUser || !chatName.trim() || selectedMembers.length === 0) return;

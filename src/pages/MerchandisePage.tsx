@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '../hooks/redux';
 import { MerchService } from '../services/merchService';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -42,11 +42,7 @@ export const MerchandisePage: React.FC = () => {
     channel: MerchSaleChannel.CONCERT
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [currentUser?.groupId, fetchData]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!currentUser?.groupId) return;
     
     setIsLoading(true);
@@ -62,7 +58,11 @@ export const MerchandisePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser?.groupId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleItemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +121,6 @@ export const MerchandisePage: React.FC = () => {
 
       await MerchService.recordSale(saleData);
       
-      // Update stock
       const newStock = { ...selectedItem.stock };
       const quantity = parseInt(saleFormData.quantity);
       
@@ -230,7 +229,6 @@ export const MerchandisePage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Merchandise</h1>
@@ -241,7 +239,6 @@ export const MerchandisePage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm font-medium text-gray-500">Total Items</h3>
@@ -264,7 +261,6 @@ export const MerchandisePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Items Grid */}
         {isLoading ? (
           <div className="text-center py-12">Loading...</div>
         ) : items.length === 0 ? (
@@ -300,7 +296,6 @@ export const MerchandisePage: React.FC = () => {
 
                 <p className="text-gray-600 text-sm mb-4">{item.description}</p>
 
-                {/* Stock Information */}
                 <div className="space-y-2 mb-4">
                   <div className="text-sm">
                     <span className="font-medium">Total Stock:</span> {MerchService.calculateTotalStock(item.stock)}
@@ -333,7 +328,6 @@ export const MerchandisePage: React.FC = () => {
           </div>
         )}
 
-        {/* Add/Edit Item Modal */}
         <Modal
           isOpen={showItemModal}
           onClose={() => {
@@ -388,7 +382,6 @@ export const MerchandisePage: React.FC = () => {
               />
             </div>
 
-            {/* Stock Management */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Stock by Size</label>
               <div className="grid grid-cols-5 gap-2">
@@ -467,7 +460,6 @@ export const MerchandisePage: React.FC = () => {
           </form>
         </Modal>
 
-        {/* Record Sale Modal */}
         <Modal
           isOpen={showSaleModal}
           onClose={() => {

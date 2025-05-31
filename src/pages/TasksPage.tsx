@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '../hooks/redux';
 import { TaskService } from '../services/taskService';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -28,11 +28,7 @@ export const TasksPage: React.FC = () => {
     assignedTo: [] as string[]
   });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [currentUser?.groupId, fetchTasks]);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (!currentUser?.groupId) return;
     
     setIsLoading(true);
@@ -44,7 +40,11 @@ export const TasksPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser?.groupId]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +182,6 @@ export const TasksPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
@@ -193,7 +192,6 @@ export const TasksPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm font-medium text-gray-500">Total Tasks</h3>
@@ -222,7 +220,6 @@ export const TasksPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter */}
         <div className="bg-white rounded-lg shadow p-4">
           <Select
             value={filter}
@@ -232,7 +229,6 @@ export const TasksPage: React.FC = () => {
           />
         </div>
 
-        {/* Tasks List */}
         <div className="bg-white rounded-lg shadow">
           {isLoading ? (
             <div className="p-6 text-center">Loading...</div>
@@ -312,7 +308,6 @@ export const TasksPage: React.FC = () => {
           )}
         </div>
 
-        {/* Add/Edit Modal */}
         <Modal
           isOpen={showModal}
           onClose={() => {

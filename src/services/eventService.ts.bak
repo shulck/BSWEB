@@ -7,8 +7,7 @@ import {
   getDocs,
   query,
   where,
-  Timestamp,
-  writeBatch
+  Timestamp
 } from 'firebase/firestore';
 import { firestore } from '../firebase';
 import { Event, EventType, EventStatus } from '../types';
@@ -78,6 +77,7 @@ export class EventService {
         groupId: event.groupId
       });
       
+      // Убедимся что у нас есть все обязательные поля
       if (!event.title || !event.date || !event.groupId) {
         throw new Error('Missing required fields: title, date, or groupId');
       }
@@ -87,6 +87,7 @@ export class EventService {
         date: Timestamp.fromDate(event.date),
         hotelCheckIn: event.hotelCheckIn ? Timestamp.fromDate(event.hotelCheckIn) : null,
         hotelCheckOut: event.hotelCheckOut ? Timestamp.fromDate(event.hotelCheckOut) : null,
+        // Убедимся что все поля определены
         title: event.title,
         type: event.type,
         status: event.status,
@@ -116,59 +117,6 @@ export class EventService {
       return docRef.id;
     } catch (error) {
       console.error('❌ EventService: Error adding event:', error);
-      throw error;
-    }
-  }
-
-  static async addRecurringEvents(events: Omit<Event, 'id'>[]): Promise<string[]> {
-    try {
-      console.log('➕ EventService: Adding recurring events:', events.length);
-      
-      const batch = writeBatch(firestore);
-      const eventIds: string[] = [];
-      
-      for (const event of events) {
-        if (!event.title || !event.date || !event.groupId) {
-          throw new Error('Missing required fields in recurring event');
-        }
-        
-        const docRef = doc(collection(firestore, this.COLLECTION));
-        const eventData = {
-          ...event,
-          date: Timestamp.fromDate(event.date),
-          hotelCheckIn: event.hotelCheckIn ? Timestamp.fromDate(event.hotelCheckIn) : null,
-          hotelCheckOut: event.hotelCheckOut ? Timestamp.fromDate(event.hotelCheckOut) : null,
-          title: event.title,
-          type: event.type,
-          status: event.status,
-          groupId: event.groupId,
-          isPersonal: event.isPersonal || false,
-          location: event.location || null,
-          organizerName: event.organizerName || null,
-          organizerEmail: event.organizerEmail || null,
-          organizerPhone: event.organizerPhone || null,
-          coordinatorName: event.coordinatorName || null,
-          coordinatorEmail: event.coordinatorEmail || null,
-          coordinatorPhone: event.coordinatorPhone || null,
-          hotelName: event.hotelName || null,
-          hotelAddress: event.hotelAddress || null,
-          fee: event.fee || null,
-          currency: event.currency || 'USD',
-          notes: event.notes || null,
-          schedule: event.schedule || null,
-          setlistId: event.setlistId || null,
-        };
-        
-        batch.set(docRef, eventData);
-        eventIds.push(docRef.id);
-      }
-      
-      await batch.commit();
-      
-      console.log('✅ EventService: Recurring events saved:', eventIds.length);
-      return eventIds;
-    } catch (error) {
-      console.error('❌ EventService: Error adding recurring events:', error);
       throw error;
     }
   }
@@ -218,49 +166,5 @@ export class EventService {
       .filter(event => new Date(event.date) > now)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, limit);
-  }
-
-  static generateRecurringEvents(baseEvent: Omit<Event, 'id'>, endDate: Date): Omit<Event, 'id'>[] {
-    const events: Omit<Event, 'id'>[] = [];
-    const startDate = new Date(baseEvent.date);
-    const currentDate = new Date(startDate);
-    
-    const timeComponents = {
-      hours: startDate.getHours(),
-      minutes: startDate.getMinutes(),
-      seconds: startDate.getSeconds(),
-      milliseconds: startDate.getMilliseconds()
-    };
-
-    while (currentDate <= endDate) {
-      const eventDate = new Date(currentDate);
-      eventDate.setHours(timeComponents.hours, timeComponents.minutes, timeComponents.seconds, timeComponents.milliseconds);
-      
-      let hotelCheckIn = baseEvent.hotelCheckIn;
-      let hotelCheckOut = baseEvent.hotelCheckOut;
-      
-      if (baseEvent.hotelCheckIn) {
-        const dayDifference = Math.floor((eventDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        hotelCheckIn = new Date(baseEvent.hotelCheckIn.getTime() + dayDifference * 24 * 60 * 60 * 1000);
-      }
-      
-      if (baseEvent.hotelCheckOut) {
-        const dayDifference = Math.floor((eventDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        hotelCheckOut = new Date(baseEvent.hotelCheckOut.getTime() + dayDifference * 24 * 60 * 60 * 1000);
-      }
-      
-      const recurringEvent: Omit<Event, 'id'> = {
-        ...baseEvent,
-        date: eventDate,
-        hotelCheckIn,
-        hotelCheckOut
-      };
-      
-      events.push(recurringEvent);
-      
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return events;
   }
 }

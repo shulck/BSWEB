@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { fetchEvents, addEvent, addRecurringEvents, updateEvent, deleteEvent } from '../store/slices/eventsSlice';
+import { fetchEvents, addEvent, updateEvent, deleteEvent } from '../store/slices/eventsSlice';
 import { MainLayout } from '../components/layout/MainLayout';
 import { CalendarGrid } from '../components/calendar/CalendarGrid';
 import { EventForm } from '../components/calendar/EventForm';
@@ -43,30 +43,44 @@ export const CalendarPage: React.FC = () => {
     setModalType('view');
   };
 
-  const handleCreateEvent = async (eventsData: Omit<Event, 'id'>[]) => {
+  const handleCreateEvent = async (eventData: Omit<Event, 'id'>[]) => {
     if (!currentUser?.groupId) {
       console.error('No groupId found for user');
       return;
     }
 
-    const eventsWithGroupId = eventsData.map(eventData => ({
-      ...eventData,
-      groupId: currentUser.groupId!,
-    }));
-
     try {
-      if (eventsWithGroupId.length === 1) {
-        await dispatch(addEvent(eventsWithGroupId[0])).unwrap();
-      } else {
-        await dispatch(addRecurringEvents(eventsWithGroupId)).unwrap();
+      for (const event of eventData) {
+        let finalDate = event.date;
+        
+        if (selectedDate) {
+          const selectedDateOnly = new Date(selectedDate);
+          const timeFromForm = new Date(event.date);
+          
+          finalDate = new Date(
+            selectedDateOnly.getFullYear(),
+            selectedDateOnly.getMonth(),
+            selectedDateOnly.getDate(),
+            timeFromForm.getHours(),
+            timeFromForm.getMinutes()
+          );
+        }
+
+        const newEvent = {
+          ...event,
+          groupId: currentUser.groupId,
+          date: finalDate,
+        };
+
+        await dispatch(addEvent(newEvent)).unwrap();
       }
       
       setModalType(null);
       setSelectedDate(null);
       dispatch(fetchEvents(currentUser.groupId));
     } catch (error) {
-      console.error('Failed to create event(s):', error);
-      alert('Failed to create event(s): ' + (error as Error).message);
+      console.error('Failed to create event:', error);
+      alert('Failed to create event: ' + (error as Error).message);
     }
   };
 
@@ -77,7 +91,6 @@ export const CalendarPage: React.FC = () => {
     const updatedEvent = {
       ...eventData,
       groupId: currentUser.groupId,
-      id: selectedEvent.id,
     };
 
     try {

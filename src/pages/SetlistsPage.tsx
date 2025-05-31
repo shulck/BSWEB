@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '../hooks/redux';
 import { SetlistService } from '../services/setlistService';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -31,11 +31,7 @@ export const SetlistsPage: React.FC = () => {
     key: ''
   });
 
-  useEffect(() => {
-    fetchSetlists();
-  }, [currentUser?.groupId, fetchSetlists]);
-
-  const fetchSetlists = async () => {
+  const fetchSetlists = useCallback(async () => {
     if (!currentUser?.groupId) return;
     
     setIsLoading(true);
@@ -47,7 +43,11 @@ export const SetlistsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser?.groupId]);
+
+  useEffect(() => {
+    fetchSetlists();
+  }, [fetchSetlists]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +159,6 @@ export const SetlistsPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Setlists</h1>
@@ -170,7 +169,6 @@ export const SetlistsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Setlists Grid */}
         {isLoading ? (
           <div className="text-center py-12">Loading...</div>
         ) : setlists.length === 0 ? (
@@ -225,7 +223,6 @@ export const SetlistsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Songs List */}
                 <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
                   {setlist.songs.map((song, index) => (
                     <div key={song.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
@@ -262,7 +259,6 @@ export const SetlistsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Create/Edit Setlist Modal */}
         <Modal
           isOpen={showModal}
           onClose={() => {
@@ -318,7 +314,6 @@ export const SetlistsPage: React.FC = () => {
           </form>
         </Modal>
 
-        {/* Add Song Modal */}
         <Modal
           isOpen={showSongModal}
           onClose={() => {

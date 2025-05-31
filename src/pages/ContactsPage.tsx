@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '../hooks/redux';
 import { ContactService } from '../services/contactService';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -27,11 +27,7 @@ export const ContactsPage: React.FC = () => {
     eventType: ''
   });
 
-  useEffect(() => {
-    fetchContacts();
-  }, [currentUser?.groupId, fetchContacts]);
-
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     if (!currentUser?.groupId) return;
     
     setIsLoading(true);
@@ -43,7 +39,11 @@ export const ContactsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser?.groupId]);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +134,6 @@ export const ContactsPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
@@ -145,7 +144,6 @@ export const ContactsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Filters */}
         <div className="bg-white rounded-lg shadow p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -165,7 +163,6 @@ export const ContactsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Contacts Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {isLoading ? (
             <div className="p-6 text-center">Loading...</div>
@@ -253,7 +250,6 @@ export const ContactsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Add/Edit Modal */}
         <Modal
           isOpen={showModal}
           onClose={() => {

@@ -81,14 +81,29 @@ export const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleUpdateEvent = async (eventData: Event) => {
-    if (!selectedEvent?.id || !currentUser?.groupId) return;
+  const handleUpdateEvent = async (events: Omit<Event, 'id'>[]) => {
+   if (!selectedEvent?.id || !currentUser?.groupId || events.length === 0) return;
 
-    const updatedEvent = {
-      ...eventData,
-      groupId: currentUser.groupId,
-      id: selectedEvent.id,
-    };
+   const eventData = events[0]; // Для редактирования берем первое событие
+   const updatedEvent = {
+     ...eventData,
+     groupId: currentUser.groupId,
+     id: selectedEvent.id,
+   };
+
+   try {
+     await dispatch(updateEvent({ 
+       eventId: selectedEvent.id, 
+       event: updatedEvent 
+     })).unwrap();
+     setModalType(null);
+     setSelectedEvent(null);
+     dispatch(fetchEvents(currentUser.groupId));
+   } catch (error) {
+     console.error('Failed to update event:', error);
+     alert('Failed to update event: ' + (error as Error).message);
+   }
+ };
 
     try {
       await dispatch(updateEvent({ 

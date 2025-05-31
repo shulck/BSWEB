@@ -25,7 +25,7 @@ export const ChatCreation: React.FC<ChatCreationProps> = ({ isOpen, onClose }) =
     if (isOpen && currentUser?.groupId) {
       fetchGroupMembers();
     }
-  }, [isOpen, currentUser?.groupId]);
+  }, [isOpen, currentUser?.groupId, fetchGroupMembers]);
 
   const fetchGroupMembers = async () => {
     if (!currentUser?.groupId) return;

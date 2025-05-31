@@ -44,7 +44,7 @@ export const MerchandisePage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentUser?.groupId]);
+  }, [currentUser?.groupId, fetchData]);
 
   const fetchData = async () => {
     if (!currentUser?.groupId) return;
@@ -225,7 +225,6 @@ export const MerchandisePage: React.FC = () => {
   }));
 
   const lowStockItems = MerchService.getLowStockItems(items);
-  const topSellingItems = MerchService.getTopSellingItems(items, sales, 3);
   const totalRevenue = MerchService.calculateRevenue(items, sales);
 
   return (

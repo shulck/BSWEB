@@ -33,7 +33,7 @@ export const SetlistsPage: React.FC = () => {
 
   useEffect(() => {
     fetchSetlists();
-  }, [currentUser?.groupId]);
+  }, [currentUser?.groupId, fetchSetlists]);
 
   const fetchSetlists = async () => {
     if (!currentUser?.groupId) return;

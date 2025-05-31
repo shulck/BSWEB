@@ -4,474 +4,360 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
+import { LocationPicker } from './LocationPicker';
+import { ScheduleEditor } from './ScheduleEditor';
+import { ContactsEditor } from './ContactsEditor';
+import { AccommodationDetails } from './AccommodationDetails';
+import { RecurringEventOptions } from './RecurringEventOptions';
 
-interface Contact {
-  id: string;
-  role: string;
-  name: string;
-  email: string;
-  phone: string;
-}
-
-interface ScheduleItem {
-  id: string;
-  time: string;
-  activity: string;
-  description: string;
-  duration: string;
+interface EventContact {
+ id: string;
+ name: string;
+ email: string;
+ phone: string;
+ role: string;
 }
 
 interface EventFormProps {
-  event?: Event | null;
-  selectedDate?: Date | null;
-  onSubmit: (event: Omit<Event, 'id'> | Event) => void;
-  onCancel: () => void;
-  isLoading?: boolean;
+ event?: Event | null;
+ selectedDate?: Date | null;
+ onSubmit: (events: Omit<Event, 'id'>[]) => void;
+ onCancel: () => void;
+ isLoading?: boolean;
 }
 
 export const EventForm: React.FC<EventFormProps> = ({
-  event,
-  selectedDate,
-  onSubmit,
-  onCancel,
-  isLoading = false,
+ event,
+ selectedDate,
+ onSubmit,
+ onCancel,
+ isLoading = false,
 }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    date: '',
-    time: '19:00',
-    type: EventType.REHEARSAL,
-    status: EventStatus.BOOKED,
-    location: '',
-    hotelName: '',
-    hotelAddress: '',
-    hotelCheckIn: '',
-    hotelCheckOut: '',
-    fee: '',
-    currency: 'USD',
-    notes: '',
-    isPersonal: false,
-  });
+ const [formData, setFormData] = useState({
+   title: '',
+   date: selectedDate || new Date(),
+   type: EventType.REHEARSAL,
+   status: EventStatus.BOOKED,
+   location: '',
+   hotelName: '',
+   hotelAddress: '',
+   hotelCheckIn: new Date(),
+   hotelCheckOut: new Date(),
+   fee: '',
+   currency: 'USD',
+   notes: '',
+   organizerName: '',
+   organizerEmail: '',
+   organizerPhone: '',
+   coordinatorName: '',
+   coordinatorEmail: '',
+   coordinatorPhone: '',
+   isPersonal: false,
+ });
 
-  const [contacts, setContacts] = useState<Contact[]>([
-    {
-      id: '1',
-      role: 'Organizer',
-      name: '',
-      email: '',
-      phone: '',
-    },
-    {
-      id: '2',
-      role: 'Coordinator',
-      name: '',
-      email: '',
-      phone: '',
-    },
-  ]);
+ const [schedule, setSchedule] = useState<string[]>([]);
+ const [additionalContacts, setAdditionalContacts] = useState<EventContact[]>([]);
+ const [isRecurring, setIsRecurring] = useState(false);
+ const [endDate, setEndDate] = useState(new Date());
+ const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [schedule, setSchedule] = useState<ScheduleItem[]>([
-    {
-      id: '1',
-      time: '',
-      activity: '',
-      description: '',
-      duration: '60',
-    }
-  ]);
+ useEffect(() => {
+   if (event) {
+     setFormData({
+       title: event.title,
+       date: new Date(event.date),
+       type: event.type,
+       status: event.status,
+       location: event.location || '',
+       hotelName: event.hotelName || '',
+       hotelAddress: event.hotelAddress || '',
+       hotelCheckIn: event.hotelCheckIn || new Date(),
+       hotelCheckOut: event.hotelCheckOut || new Date(),
+       fee: event.fee?.toString() || '',
+       currency: event.currency || 'USD',
+       notes: event.notes || '',
+       organizerName: event.organizerName || '',
+       organizerEmail: event.organizerEmail || '',
+       organizerPhone: event.organizerPhone || '',
+       coordinatorName: event.coordinatorName || '',
+       coordinatorEmail: event.coordinatorEmail || '',
+       coordinatorPhone: event.coordinatorPhone || '',
+       isPersonal: event.isPersonal,
+     });
+     setSchedule(event.schedule || []);
+   } else {
+     const nextDay = new Date(formData.date);
+     nextDay.setDate(nextDay.getDate() + 1);
+     setEndDate(nextDay);
+   }
+ }, [event, formData.date]);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+ const validateForm = () => {
+   const newErrors: Record<string, string> = {};
 
-  const formatDateForInput = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+   if (!formData.title.trim()) {
+     newErrors.title = 'Title is required';
+   }
 
-  const formatTimeForInput = (date: Date): string => {
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
+   setErrors(newErrors);
+   return Object.keys(newErrors).length === 0;
+ };
 
-  useEffect(() => {
-    if (!event && selectedDate) {
-      setFormData(prev => ({
-        ...prev,
-        date: formatDateForInput(selectedDate),
-        time: '19:00'
-      }));
-    }
+ const createEventData = (date: Date): Omit<Event, 'id'> => {
+   return {
+     title: formData.title.trim(),
+     date,
+     type: formData.type,
+     status: formData.status,
+     location: formData.location.trim() || undefined,
+     organizerName: formData.organizerName.trim() || undefined,
+     organizerEmail: formData.organizerEmail.trim() || undefined,
+     organizerPhone: formData.organizerPhone.trim() || undefined,
+     coordinatorName: formData.coordinatorName.trim() || undefined,
+     coordinatorEmail: formData.coordinatorEmail.trim() || undefined,
+     coordinatorPhone: formData.coordinatorPhone.trim() || undefined,
+     hotelName: formData.hotelName.trim() || undefined,
+     hotelAddress: formData.hotelAddress.trim() || undefined,
+     hotelCheckIn: formData.hotelName ? formData.hotelCheckIn : undefined,
+     hotelCheckOut: formData.hotelName ? formData.hotelCheckOut : undefined,
+     fee: formData.fee ? parseFloat(formData.fee) : undefined,
+     currency: formData.currency,
+     notes: formData.notes.trim() || undefined,
+     schedule: schedule.length > 0 ? schedule : undefined,
+     setlistId: undefined,
+     groupId: '',
+     isPersonal: formData.isPersonal,
+   };
+ };
 
-    if (event) {
-      const eventDate = new Date(event.date);
-      
-      setFormData({
-        title: event.title,
-        date: formatDateForInput(eventDate),
-        time: formatTimeForInput(eventDate),
-        type: event.type,
-        status: event.status,
-        location: event.location || '',
-        hotelName: event.hotelName || '',
-        hotelAddress: event.hotelAddress || '',
-        hotelCheckIn: event.hotelCheckIn ? formatDateForInput(new Date(event.hotelCheckIn)) : '',
-        hotelCheckOut: event.hotelCheckOut ? formatDateForInput(new Date(event.hotelCheckOut)) : '',
-        fee: event.fee ? event.fee.toString() : '',
-        currency: event.currency || 'USD',
-        notes: event.notes || '',
-        isPersonal: event.isPersonal,
-      });
+ const generateRecurringEvents = (): Omit<Event, 'id'>[] => {
+   if (!isRecurring) {
+     return [createEventData(formData.date)];
+   }
 
-      const initialContacts: Contact[] = [];
-      
-      if (event.organizerName || event.organizerEmail || event.organizerPhone) {
-        initialContacts.push({
-          id: '1',
-          role: 'Organizer',
-          name: event.organizerName || '',
-          email: event.organizerEmail || '',
-          phone: event.organizerPhone || '',
-        });
-      }
+   const events: Omit<Event, 'id'>[] = [];
+   const start = new Date(formData.date);
+   const end = new Date(endDate);
+   
+   const timeComponents = {
+     hours: start.getHours(),
+     minutes: start.getMinutes()
+   };
 
-      if (event.coordinatorName || event.coordinatorEmail || event.coordinatorPhone) {
-        initialContacts.push({
-          id: '2',
-          role: 'Coordinator',
-          name: event.coordinatorName || '',
-          email: event.coordinatorEmail || '',
-          phone: event.coordinatorPhone || '',
-        });
-      }
+   for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+     const eventDate = new Date(currentDate);
+     eventDate.setHours(timeComponents.hours, timeComponents.minutes, 0, 0);
+     
+     events.push(createEventData(eventDate));
+   }
 
-      if (initialContacts.length === 0) {
-        initialContacts.push({
-          id: '1',
-          role: 'Organizer',
-          name: '',
-          email: '',
-          phone: '',
-        });
-      }
+   return events;
+ };
 
-      setContacts(initialContacts);
+ const handleSubmit = (e: React.FormEvent) => {
+   e.preventDefault();
+   
+   if (!validateForm()) return;
 
-      if (event.schedule && event.schedule.length > 0) {
-        const initialSchedule = event.schedule.map((item, index) => {
-          const match = item.match(/(\d{2}:\d{2})\s*-\s*([^(]+)\s*\((\d+)\s*min\):\s*(.*)/);
-          if (match) {
-            return {
-              id: (index + 1).toString(),
-              time: match[1],
-              activity: match[2].trim(),
-              duration: match[3],
-              description: match[4].trim(),
-            };
-          }
-          return {
-            id: (index + 1).toString(),
-            time: '',
-            activity: item,
-            description: '',
-            duration: '60',
-          };
-        });
-        setSchedule(initialSchedule);
-      }
-    }
-  }, [event, selectedDate]);
+   const events = generateRecurringEvents();
+   onSubmit(events);
+ };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    }));
+ const eventTypeOptions = Object.values(EventType).map(type => ({
+   value: type,
+   label: type,
+ }));
 
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+ const eventStatusOptions = Object.values(EventStatus).map(status => ({
+   value: status,
+   label: status,
+ }));
 
-  const handleContactChange = (contactId: string, field: keyof Contact, value: string) => {
-    setContacts(prev => prev.map(contact => 
-      contact.id === contactId 
-        ? { ...contact, [field]: value }
-        : contact
-    ));
-  };
+ const showOrganizerSection = [EventType.CONCERT, EventType.FESTIVAL, EventType.INTERVIEW, EventType.PHOTOSHOOT].includes(formData.type);
+ const showCoordinatorSection = [EventType.CONCERT, EventType.FESTIVAL].includes(formData.type);
+ const showAccommodationSection = [EventType.CONCERT, EventType.FESTIVAL, EventType.PHOTOSHOOT].includes(formData.type);
+ const showFeeSection = [EventType.CONCERT, EventType.FESTIVAL, EventType.INTERVIEW, EventType.PHOTOSHOOT].includes(formData.type);
 
-  const handleScheduleChange = (scheduleId: string, field: keyof ScheduleItem, value: string) => {
-    setSchedule(prev => prev.map(item => 
-      item.id === scheduleId 
-        ? { ...item, [field]: value }
-        : item
-    ));
-  };
+ return (
+   <div className="max-h-[80vh] overflow-y-auto">
+     <form onSubmit={handleSubmit} className="space-y-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <Input
+           label="Event Title*"
+           value={formData.title}
+           onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+           error={errors.title}
+           placeholder="Enter event title"
+         />
 
-  const addContact = () => {
-    const newContact: Contact = {
-      id: Date.now().toString(),
-      role: '',
-      name: '',
-      email: '',
-      phone: '',
-    };
-    setContacts(prev => [...prev, newContact]);
-  };
+         <Select
+           label="Event Type*"
+           value={formData.type}
+           onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as EventType }))}
+           options={eventTypeOptions}
+         />
 
-  const removeContact = (contactId: string) => {
-    if (contacts.length > 1) {
-      setContacts(prev => prev.filter(contact => contact.id !== contactId));
-    }
-  };
+         <Input
+           label="Date & Time*"
+           type="datetime-local"
+           value={formData.date.toISOString().slice(0, 16)}
+           onChange={(e) => setFormData(prev => ({ ...prev, date: new Date(e.target.value) }))}
+         />
 
-  const addScheduleItem = () => {
-    const newItem: ScheduleItem = {
-      id: Date.now().toString(),
-      time: '',
-      activity: '',
-      description: '',
-      duration: '60',
-    };
-    setSchedule(prev => [...prev, newItem]);
-  };
+         <Select
+           label="Status"
+           value={formData.status}
+           onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as EventStatus }))}
+           options={eventStatusOptions}
+         />
+       </div>
 
-  const removeScheduleItem = (scheduleId: string) => {
-    if (schedule.length > 1) {
-      setSchedule(prev => prev.filter(item => item.id !== scheduleId));
-    }
-  };
+       <RecurringEventOptions
+         isRecurring={isRecurring}
+         endDate={endDate}
+         onRecurringChange={setIsRecurring}
+         onEndDateChange={setEndDate}
+         startDate={formData.date}
+       />
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+       <div>
+         <LocationPicker
+           value={formData.location}
+           onChange={(location) => setFormData(prev => ({ ...prev, location }))}
+           placeholder="Event location"
+         />
+       </div>
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
+       <ScheduleEditor
+         schedule={schedule}
+         onChange={setSchedule}
+       />
 
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
-    }
+       {showOrganizerSection && (
+         <div className="border-t pt-6">
+           <h3 className="text-lg font-medium text-gray-900 mb-4">Organizer Information</h3>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <Input
+               label="Name"
+               value={formData.organizerName}
+               onChange={(e) => setFormData(prev => ({ ...prev, organizerName: e.target.value }))}
+               placeholder="Organizer name"
+             />
+             <Input
+               label="Email"
+               type="email"
+               value={formData.organizerEmail}
+               onChange={(e) => setFormData(prev => ({ ...prev, organizerEmail: e.target.value }))}
+               placeholder="organizer@example.com"
+             />
+             <Input
+               label="Phone"
+               type="tel"
+               value={formData.organizerPhone}
+               onChange={(e) => setFormData(prev => ({ ...prev, organizerPhone: e.target.value }))}
+               placeholder="+1234567890"
+             />
+           </div>
+         </div>
+       )}
 
-    if (!formData.time) {
-      newErrors.time = 'Time is required';
-    }
+       {showCoordinatorSection && (
+         <div className="border-t pt-6">
+           <h3 className="text-lg font-medium text-gray-900 mb-4">Coordinator Information</h3>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <Input
+               label="Name"
+               value={formData.coordinatorName}
+               onChange={(e) => setFormData(prev => ({ ...prev, coordinatorName: e.target.value }))}
+               placeholder="Coordinator name"
+             />
+             <Input
+               label="Email"
+               type="email"
+               value={formData.coordinatorEmail}
+               onChange={(e) => setFormData(prev => ({ ...prev, coordinatorEmail: e.target.value }))}
+               placeholder="coordinator@example.com"
+             />
+             <Input
+               label="Phone"
+               type="tel"
+               value={formData.coordinatorPhone}
+               onChange={(e) => setFormData(prev => ({ ...prev, coordinatorPhone: e.target.value }))}
+               placeholder="+1234567890"
+             />
+           </div>
+         </div>
+       )}
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+       <ContactsEditor
+         contacts={additionalContacts}
+         onChange={setAdditionalContacts}
+       />
 
-  const createDateTimeFromInputs = (dateStr: string, timeStr: string): Date => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return new Date(year, month - 1, day, hours, minutes);
-  };
+       {showAccommodationSection && (
+         <div className="border-t pt-6">
+           <h3 className="text-lg font-medium text-gray-900 mb-4">Accommodation</h3>
+           <AccommodationDetails
+             hotelName={formData.hotelName}
+             hotelAddress={formData.hotelAddress}
+             hotelCheckIn={formData.hotelCheckIn}
+             hotelCheckOut={formData.hotelCheckOut}
+             onHotelNameChange={(value) => setFormData(prev => ({ ...prev, hotelName: value }))}
+             onHotelAddressChange={(value) => setFormData(prev => ({ ...prev, hotelAddress: value }))}
+             onCheckInChange={(value) => setFormData(prev => ({ ...prev, hotelCheckIn: value }))}
+             onCheckOutChange={(value) => setFormData(prev => ({ ...prev, hotelCheckOut: value }))}
+           />
+         </div>
+       )}
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
+       {showFeeSection && (
+         <div className="border-t pt-6">
+           <h3 className="text-lg font-medium text-gray-900 mb-4">Financial Details</h3>
+           <div className="grid grid-cols-2 gap-4">
+             <Input
+               label="Fee"
+               type="number"
+               step="0.01"
+               value={formData.fee}
+               onChange={(e) => setFormData(prev => ({ ...prev, fee: e.target.value }))}
+               placeholder="0.00"
+             />
+             <Input
+               label="Currency"
+               value={formData.currency}
+               onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+               placeholder="USD"
+             />
+           </div>
+         </div>
+       )}
 
-    const datetime = createDateTimeFromInputs(formData.date, formData.time);
+       <div className="border-t pt-6">
+         <Textarea
+           label="Notes"
+           value={formData.notes}
+           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+           rows={3}
+           placeholder="Additional notes..."
+         />
+       </div>
 
-    const organizer = contacts.find(c => c.role.toLowerCase() === 'organizer');
-    const coordinator = contacts.find(c => c.role.toLowerCase() === 'coordinator');
-
-    const formattedSchedule = schedule
-      .filter(item => item.activity.trim())
-      .map(item => {
-        if (item.time && item.activity) {
-          const timeStr = item.time;
-          const activityStr = item.activity.trim();
-          const durationStr = item.duration ? `(${item.duration} min)` : '';
-          const descriptionStr = item.description.trim() ? `: ${item.description.trim()}` : '';
-          return `${timeStr} - ${activityStr} ${durationStr}${descriptionStr}`;
-        }
-        return item.activity.trim();
-      });
-
-    const eventData = {
-      ...(event && { id: event.id }),
-      title: formData.title.trim(),
-      date: datetime,
-      type: formData.type,
-      status: formData.status,
-      location: formData.location.trim() || undefined,
-      organizerName: organizer?.name.trim() || undefined,
-      organizerEmail: organizer?.email.trim() || undefined,
-      organizerPhone: organizer?.phone.trim() || undefined,
-      coordinatorName: coordinator?.name.trim() || undefined,
-      coordinatorEmail: coordinator?.email.trim() || undefined,
-      coordinatorPhone: coordinator?.phone.trim() || undefined,
-      hotelName: formData.hotelName.trim() || undefined,
-      hotelAddress: formData.hotelAddress.trim() || undefined,
-      hotelCheckIn: formData.hotelCheckIn ? createDateTimeFromInputs(formData.hotelCheckIn, '15:00') : undefined,
-      hotelCheckOut: formData.hotelCheckOut ? createDateTimeFromInputs(formData.hotelCheckOut, '11:00') : undefined,
-      fee: formData.fee ? parseFloat(formData.fee) : undefined,
-      currency: formData.currency,
-      notes: formData.notes.trim() || undefined,
-      schedule: formattedSchedule.length > 0 ? formattedSchedule : undefined,
-      setlistId: undefined,
-      groupId: '',
-      isPersonal: formData.isPersonal,
-    };
-
-    onSubmit(eventData);
-  };
-
-  const eventTypeOptions = Object.values(EventType).map(type => ({
-    value: type,
-    label: type,
-  }));
-
-  const eventStatusOptions = Object.values(EventStatus).map(status => ({
-    value: status,
-    label: status,
-  }));
-
-  const contactRoleOptions = [
-    { value: 'Organizer', label: 'Organizer' },
-    { value: 'Coordinator', label: 'Coordinator' },
-    { value: 'Manager', label: 'Manager' },
-    { value: 'Sound Engineer', label: 'Sound Engineer' },
-    { value: 'Lighting Engineer', label: 'Lighting Engineer' },
-    { value: 'Stage Manager', label: 'Stage Manager' },
-    { value: 'Security', label: 'Security' },
-    { value: 'Venue Contact', label: 'Venue Contact' },
-    { value: 'Transport', label: 'Transport' },
-    { value: 'Catering', label: 'Catering' },
-    { value: 'Other', label: 'Other' },
-  ];
-
-  const activityOptions = [
-    { value: 'Load In', label: 'Load In' },
-    { value: 'Sound Check', label: 'Sound Check' },
-    { value: 'Rehearsal', label: 'Rehearsal' },
-    { value: 'Performance', label: 'Performance' },
-    { value: 'Meet & Greet', label: 'Meet & Greet' },
-    { value: 'Interview', label: 'Interview' },
-    { value: 'Photo Shoot', label: 'Photo Shoot' },
-    { value: 'Break', label: 'Break' },
-    { value: 'Meal', label: 'Meal' },
-    { value: 'Travel', label: 'Travel' },
-    { value: 'Setup', label: 'Setup' },
-    { value: 'Breakdown', label: 'Breakdown' },
-    { value: 'Load Out', label: 'Load Out' },
-    { value: 'Other', label: 'Other' },
-  ];
-
-  return (
-    <div className="max-h-[80vh] overflow-y-auto">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Event Title*"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            error={errors.title}
-            placeholder="Enter event title"
-          />
-
-          <Select
-            label="Event Type*"
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            options={eventTypeOptions}
-          />
-
-          <Input
-            label="Date*"
-            name="date"
-            type="date"
-            value={formData.date}
-            onChange={handleChange}
-            error={errors.date}
-          />
-
-          <Input
-            label="Time*"
-            name="time"
-            type="time"
-            value={formData.time}
-            onChange={handleChange}
-            error={errors.time}
-          />
-
-          <Select
-            label="Status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            options={eventStatusOptions}
-          />
-
-          <Input
-            label="Location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Event location"
-          />
-        </div>
-
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Schedule</h3>
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="grid grid-cols-3 gap-4">
-              <Input
-                label="Time"
-                type="time"
-                value={schedule[0]?.time || ''}
-                onChange={(e) => handleScheduleChange('1', 'time', e.target.value)}
-              />
-              <Input
-                label="Activity"
-                value={schedule[0]?.activity || ''}
-                onChange={(e) => handleScheduleChange('1', 'activity', e.target.value)}
-                placeholder="Activity name"
-              />
-              <Input
-                label="Duration (min)"
-                type="number"
-                value={schedule[0]?.duration || '60'}
-                onChange={(e) => handleScheduleChange('1', 'duration', e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t pt-6">
-          <Textarea
-            label="Notes"
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Additional notes..."
-          />
-        </div>
-
-        <div className="flex justify-end space-x-3 pt-6 border-t">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            loading={isLoading}
-          >
-            {event ? 'Update Event' : 'Create Event'}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
+       <div className="flex justify-end space-x-3 pt-6 border-t">
+         <Button
+           type="button"
+           variant="secondary"
+           onClick={onCancel}
+         >
+           Cancel
+         </Button>
+         <Button
+           type="submit"
+           loading={isLoading}
+         >
+           {isRecurring ? `Create ${generateRecurringEvents().length} Events` : (event ? 'Update Event' : 'Create Event')}
+         </Button>
+       </div>
+     </form>
+   </div>
+ );
 };

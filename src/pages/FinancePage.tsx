@@ -7,7 +7,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
 import { Modal } from '../components/ui/Modal';
-import { FinanceRecord, FinanceType, FinanceCategory } from '../types';
+import { FinanceRecord, FinanceType } from '../types';
 import { FinanceService } from '../services/financeService';
 
 export const FinancePage: React.FC = () => {

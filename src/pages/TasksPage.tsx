@@ -30,7 +30,7 @@ export const TasksPage: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [currentUser?.groupId]);
+  }, [currentUser?.groupId, fetchTasks]);
 
   const fetchTasks = async () => {
     if (!currentUser?.groupId) return;

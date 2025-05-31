@@ -11,7 +11,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { firestore } from '../firebase';
-import { GroupModel, UserModel, UserRole } from '../types';
+import { GroupModel, UserRole } from '../types';
 
 export class GroupService {
   private static COLLECTION = 'groups';

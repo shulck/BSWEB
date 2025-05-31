@@ -29,7 +29,7 @@ export const ContactsPage: React.FC = () => {
 
   useEffect(() => {
     fetchContacts();
-  }, [currentUser?.groupId]);
+  }, [currentUser?.groupId, fetchContacts]);
 
   const fetchContacts = async () => {
     if (!currentUser?.groupId) return;

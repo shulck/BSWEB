@@ -17,34 +17,39 @@ export class TaskService {
   private static COLLECTION = 'tasks';
 
   static async fetchTasks(groupId: string): Promise<TaskModel[]> {
-    const q = query(
-      collection(firestore, this.COLLECTION),
-      where('groupId', '==', groupId),
-      orderBy('dueDate')
-    );
+    try {
+      const q = query(
+        collection(firestore, this.COLLECTION),
+        where('groupId', '==', groupId),
+        orderBy('dueDate')
+      );
 
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.title,
-        description: data.description,
-        assignedTo: data.assignedTo,
-        dueDate: data.dueDate.toDate(),
-        completed: data.completed,
-        groupId: data.groupId,
-        priority: data.priority,
-        category: data.category,
-        attachments: data.attachments,
-        subtasks: data.subtasks,
-        reminders: data.reminders?.map((r: any) => r.toDate()),
-        createdBy: data.createdBy,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate()
-      } as TaskModel;
-    });
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          description: data.description,
+          assignedTo: data.assignedTo || [],
+          dueDate: data.dueDate ? data.dueDate.toDate() : new Date(),
+          completed: data.completed || false,
+          groupId: data.groupId,
+          priority: data.priority,
+          category: data.category,
+          attachments: data.attachments || [],
+          subtasks: data.subtasks || [],
+          reminders: data.reminders ? data.reminders.map((r: any) => r.toDate()) : [],
+          createdBy: data.createdBy,
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date()
+        } as TaskModel;
+      });
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      return [];
+    }
   }
 
   static async addTask(task: Omit<TaskModel, 'id'>): Promise<string> {
@@ -53,7 +58,7 @@ export class TaskService {
       dueDate: Timestamp.fromDate(task.dueDate),
       createdAt: Timestamp.fromDate(task.createdAt),
       updatedAt: Timestamp.fromDate(task.updatedAt),
-      reminders: task.reminders?.map(r => Timestamp.fromDate(r))
+      reminders: task.reminders?.map(r => Timestamp.fromDate(r)) || []
     };
 
     const docRef = await addDoc(collection(firestore, this.COLLECTION), taskData);

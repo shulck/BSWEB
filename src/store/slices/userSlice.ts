@@ -19,7 +19,10 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const user = await UserService.fetchCurrentUser();
-      return user;
+      return {
+        ...user,
+        lastSeen: user.lastSeen ? user.lastSeen.getTime() : null
+      };
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -32,7 +35,10 @@ export const updateUserGroup = createAsyncThunk(
     try {
       await UserService.updateUserGroup(groupId);
       const updatedUser = await UserService.fetchCurrentUser();
-      return updatedUser;
+      return {
+        ...updatedUser,
+        lastSeen: updatedUser.lastSeen ? updatedUser.lastSeen.getTime() : null
+      };
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -44,7 +50,14 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setCurrentUser: (state, action: PayloadAction<UserModel | null>) => {
-      state.currentUser = action.payload;
+      if (action.payload) {
+        state.currentUser = {
+          ...action.payload,
+          lastSeen: action.payload.lastSeen ? new Date(action.payload.lastSeen) : undefined
+        };
+      } else {
+        state.currentUser = null;
+      }
     },
     clearUser: (state) => {
       state.currentUser = null;
@@ -61,7 +74,10 @@ const userSlice = createSlice({
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentUser = action.payload;
+        state.currentUser = {
+          ...action.payload,
+          lastSeen: action.payload.lastSeen ? new Date(action.payload.lastSeen) : undefined
+        };
         state.error = null;
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
@@ -69,7 +85,10 @@ const userSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(updateUserGroup.fulfilled, (state, action) => {
-        state.currentUser = action.payload;
+        state.currentUser = {
+          ...action.payload,
+          lastSeen: action.payload.lastSeen ? new Date(action.payload.lastSeen) : undefined
+        };
       });
   },
 });

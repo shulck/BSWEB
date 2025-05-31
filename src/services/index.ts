@@ -1,3 +1,13 @@
 export { AuthService } from './authService';
 export { UserService } from './userService';
 export { EventService } from './eventService';
+export { FinanceService } from './financeService';
+export { TaskService } from './taskService';
+export { MerchService } from './merchService';
+export { ContactService } from './contactService';
+export { ChatService } from './chatService';
+export { GroupService } from './groupService';
+export { FileService } from './fileService';
+export { ContactEventService } from './contactEventService';
+export { SetlistService } from './setlistService';
+export { PermissionService } from './permissionService';

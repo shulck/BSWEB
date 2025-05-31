@@ -24,10 +24,16 @@ export const store = configureStore({
           'events/addEvent/fulfilled',
           'events/updateEvent/fulfilled',
           'finances/addRecord/fulfilled',
-          'finances/updateRecord/fulfilled'
+          'finances/updateRecord/fulfilled',
+          'user/fetchCurrent/pending',
+          'user/fetchCurrent/fulfilled'
         ],
-        ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
-        ignoredPaths: ['items.dates'],
+        ignoredActionsPaths: ['meta.arg', 'payload.timestamp', 'payload.lastSeen', 'payload.date'],
+        ignoredPaths: [
+          'items.dates',
+          'auth.user',
+          'user.currentUser.lastSeen'
+        ],
       },
     }),
 });

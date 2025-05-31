@@ -18,6 +18,7 @@ import { TasksPage } from './pages/TasksPage';
 import { GroupsPage } from './pages/GroupsPage';
 import { SetlistsPage } from './pages/SetlistsPage';
 import { MerchandisePage } from './pages/MerchandisePage';
+import { GroupManagePage } from './pages/GroupManagePage';
 
 function App() {
   return (
@@ -83,6 +84,12 @@ function App() {
           <Route path="/groups" element={
             <ProtectedRoute>
               <GroupsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/group-manage" element={
+            <ProtectedRoute>
+              <GroupManagePage />
             </ProtectedRoute>
           } />
 

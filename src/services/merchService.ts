@@ -29,7 +29,7 @@ export class MerchService {
       return {
         id: doc.id,
         ...data,
-        updatedAt: data.updatedAt?.toDate()
+        updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date()
       } as MerchItem;
     });
   }
@@ -47,7 +47,7 @@ export class MerchService {
       return {
         id: doc.id,
         ...data,
-        date: data.date.toDate()
+        date: data.date ? data.date.toDate() : new Date()
       } as MerchSale;
     });
   }
@@ -74,7 +74,6 @@ export class MerchService {
   static async deleteItem(itemId: string): Promise<void> {
     await deleteDoc(doc(firestore, this.ITEMS_COLLECTION, itemId));
     
-    // Also delete related sales
     const salesQ = query(
       collection(firestore, this.SALES_COLLECTION),
       where('itemId', '==', itemId)
@@ -113,7 +112,6 @@ export class MerchService {
     const totalStock = this.calculateTotalStock(item.stock);
     
     if (item.category === MerchCategory.CLOTHING) {
-      // For clothing, check if any size is low
       return (
         (item.stock.S > 0 && item.stock.S <= item.lowStockThreshold) ||
         (item.stock.M > 0 && item.stock.M <= item.lowStockThreshold) ||

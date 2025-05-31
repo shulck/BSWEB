@@ -51,6 +51,7 @@ export enum ChatType {
 export enum MessageType {
   TEXT = "text",
   IMAGE = "image",
+  FILE = "file",
   LINK = "link"
 }
 
@@ -194,12 +195,15 @@ export interface Message {
   chatId: string;
   senderId: string;
   content: string;
-  type: string;
+  type: MessageType;
   timestamp: Date;
   replyTo?: string;
   seenBy: string[];
   deliveredTo: string[];
   isEdited: boolean;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
 }
 
 export interface GroupChatModel {
@@ -222,6 +226,8 @@ export interface Contact {
   groupId: string;
   eventTag?: string;
   eventType?: string;
+  eventId?: string;
+  updatedAt?: Date;
 }
 
 export interface TaskModel {
@@ -290,6 +296,8 @@ export interface Song {
   durationSeconds: number;
   bpm: number;
   key?: string;
+  chords?: string;
+  notes?: string;
   startTime?: Date;
 }
 
@@ -301,6 +309,7 @@ export interface Setlist {
   isShared: boolean;
   songs: Song[];
   concertDate?: Date;
+  eventId?: string;
 }
 
 export interface PermissionModel {

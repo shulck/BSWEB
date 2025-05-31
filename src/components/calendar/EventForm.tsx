@@ -82,61 +82,48 @@ export const EventForm: React.FC<EventFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatTimeForInput = (date: Date): string => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   useEffect(() => {
-    // Автозаполнение даты из календаря
     if (!event && selectedDate) {
-      // Исправляем проблему с часовыми поясами
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-      
       setFormData(prev => ({
         ...prev,
-        date: dateStr,
+        date: formatDateForInput(selectedDate),
         time: '19:00'
       }));
     }
 
-    // Заполнение формы для редактирования события
     if (event) {
       const eventDate = new Date(event.date);
-      // Исправляем проблему с часовыми поясами для редактирования
-      const year = eventDate.getFullYear();
-      const month = String(eventDate.getMonth() + 1).padStart(2, '0');
-      const day = String(eventDate.getDate()).padStart(2, '0');
-      const eventDateStr = `${year}-${month}-${day}`;
       
       setFormData({
         title: event.title,
-        date: eventDateStr,
-        time: eventDate.toTimeString().slice(0, 5),
+        date: formatDateForInput(eventDate),
+        time: formatTimeForInput(eventDate),
         type: event.type,
         status: event.status,
         location: event.location || '',
         hotelName: event.hotelName || '',
         hotelAddress: event.hotelAddress || '',
-        hotelCheckIn: event.hotelCheckIn ? (() => {
-          const checkInDate = new Date(event.hotelCheckIn);
-          const year = checkInDate.getFullYear();
-          const month = String(checkInDate.getMonth() + 1).padStart(2, '0');
-          const day = String(checkInDate.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        })() : '',
-        hotelCheckOut: event.hotelCheckOut ? (() => {
-          const checkOutDate = new Date(event.hotelCheckOut);
-          const year = checkOutDate.getFullYear();
-          const month = String(checkOutDate.getMonth() + 1).padStart(2, '0');
-          const day = String(checkOutDate.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        })() : '',
+        hotelCheckIn: event.hotelCheckIn ? formatDateForInput(new Date(event.hotelCheckIn)) : '',
+        hotelCheckOut: event.hotelCheckOut ? formatDateForInput(new Date(event.hotelCheckOut)) : '',
         fee: event.fee ? event.fee.toString() : '',
         currency: event.currency || 'USD',
         notes: event.notes || '',
         isPersonal: event.isPersonal,
       });
 
-      // Initialize contacts from event data
       const initialContacts: Contact[] = [];
       
       if (event.organizerName || event.organizerEmail || event.organizerPhone) {
@@ -171,7 +158,6 @@ export const EventForm: React.FC<EventFormProps> = ({
 
       setContacts(initialContacts);
 
-      // Initialize schedule from event data
       if (event.schedule && event.schedule.length > 0) {
         const initialSchedule = event.schedule.map((item, index) => {
           const match = item.match(/(\d{2}:\d{2})\s*-\s*([^(]+)\s*\((\d+)\s*min\):\s*(.*)/);
@@ -278,12 +264,18 @@ export const EventForm: React.FC<EventFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const createDateTimeFromInputs = (dateStr: string, timeStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
-    const datetime = new Date(`${formData.date}T${formData.time}`);
+    const datetime = createDateTimeFromInputs(formData.date, formData.time);
 
     const organizer = contacts.find(c => c.role.toLowerCase() === 'organizer');
     const coordinator = contacts.find(c => c.role.toLowerCase() === 'coordinator');
@@ -316,8 +308,8 @@ export const EventForm: React.FC<EventFormProps> = ({
       coordinatorPhone: coordinator?.phone.trim() || undefined,
       hotelName: formData.hotelName.trim() || undefined,
       hotelAddress: formData.hotelAddress.trim() || undefined,
-      hotelCheckIn: formData.hotelCheckIn ? new Date(formData.hotelCheckIn) : undefined,
-      hotelCheckOut: formData.hotelCheckOut ? new Date(formData.hotelCheckOut) : undefined,
+      hotelCheckIn: formData.hotelCheckIn ? createDateTimeFromInputs(formData.hotelCheckIn, '15:00') : undefined,
+      hotelCheckOut: formData.hotelCheckOut ? createDateTimeFromInputs(formData.hotelCheckOut, '11:00') : undefined,
       fee: formData.fee ? parseFloat(formData.fee) : undefined,
       currency: formData.currency,
       notes: formData.notes.trim() || undefined,
@@ -374,7 +366,6 @@ export const EventForm: React.FC<EventFormProps> = ({
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Event Title*"
@@ -428,7 +419,6 @@ export const EventForm: React.FC<EventFormProps> = ({
           />
         </div>
 
-        {/* Schedule */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Schedule</h3>
           <div className="bg-blue-50 rounded-lg p-4">
@@ -455,7 +445,6 @@ export const EventForm: React.FC<EventFormProps> = ({
           </div>
         </div>
 
-        {/* Notes */}
         <div className="border-t pt-6">
           <Textarea
             label="Notes"
@@ -467,7 +456,6 @@ export const EventForm: React.FC<EventFormProps> = ({
           />
         </div>
 
-        {/* Buttons */}
         <div className="flex justify-end space-x-3 pt-6 border-t">
           <Button
             type="button"

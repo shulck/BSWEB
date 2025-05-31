@@ -2,19 +2,13 @@ import {
   ref,
   push,
   onValue,
-  off,
   update,
-  remove,
   serverTimestamp,
   Database
 } from 'firebase/database';
 import { 
-  collection, 
   doc, 
-  getDoc, 
-  getDocs, 
-  query, 
-  where 
+  getDoc 
 } from 'firebase/firestore';
 import { realtimeDB, firestore } from '../firebase';
 import { Chat, Message, UserModel, ChatType, MessageType } from '../types';
@@ -36,6 +30,7 @@ export class ChatService {
     const chatRef = push(ref(this.db, 'chats'));
     await update(chatRef, chatData);
     
+    console.log('✅ Created direct chat:', chatRef.key);
     return chatRef.key!;
   }
 
@@ -54,44 +49,93 @@ export class ChatService {
       lastMessageTime: serverTimestamp()
     };
 
+    console.log('🏗️ Creating group chat:', { name, participantIds, adminId });
+
     const chatRef = push(ref(this.db, 'chats'));
     await update(chatRef, chatData);
     
+    console.log('✅ Created group chat:', chatRef.key, 'with name:', name);
     return chatRef.key!;
   }
 
   static subscribeToChats(userId: string, callback: (chats: Chat[]) => void) {
+    console.log('🔍 SUBSCRIBING TO CHATS FOR USER:', userId);
     const chatsRef = ref(this.db, 'chats');
     
     return onValue(chatsRef, async (snapshot) => {
+      console.log('📊 FIREBASE SNAPSHOT - EXISTS:', snapshot.exists());
+      
+      if (!snapshot.exists()) {
+        console.log('❌ NO CHATS IN FIREBASE DATABASE!');
+        callback([]);
+        return;
+      }
+
+      const data = snapshot.val();
+      console.log('📊 RAW FIREBASE DATA:', data);
+      console.log('📊 TOTAL CHATS IN DATABASE:', Object.keys(data).length);
+      
       const chats: Chat[] = [];
       
-      if (snapshot.exists()) {
-        const data = snapshot.val();
+      for (const [chatId, chatData] of Object.entries(data)) {
+        const chat = chatData as any;
         
-        for (const [chatId, chatData] of Object.entries(data)) {
-          const chat = chatData as any;
+        // Определяем тип чата
+        const participantCount = chat.participants ? Object.keys(chat.participants).length : 0;
+        const actualType = participantCount > 2 ? ChatType.GROUP : 
+                          (chat.type === ChatType.GROUP ? ChatType.GROUP : ChatType.DIRECT);
+        
+        console.log(`🔍 PROCESSING CHAT ${chatId}:`, {
+          chatName: chat.name,
+          chatType: chat.type,
+          actualType: actualType,
+          participantCount: participantCount,
+          hasParticipants: !!chat.participants,
+          participants: chat.participants ? Object.keys(chat.participants) : [],
+          isUserInChat: chat.participants?.[userId] === true
+        });
+        
+        if (chat.participants && chat.participants[userId] === true) {
+          let chatName = chat.name;
           
-          if (chat.participants && chat.participants[userId]) {
-            let chatName = chat.name;
-            
-            if (chat.type === ChatType.DIRECT && !chatName) {
-              const otherUserId = Object.keys(chat.participants).find(id => id !== userId);
-              if (otherUserId) {
-                const userName = await this.getUserName(otherUserId);
-                chatName = userName || 'Unknown User';
-              }
+          // Для прямых чатов получаем имя собеседника
+          if (actualType === ChatType.DIRECT && !chatName) {
+            const otherUserId = Object.keys(chat.participants).find(id => id !== userId);
+            if (otherUserId) {
+              const userName = await this.getUserName(otherUserId);
+              chatName = userName || 'Unknown User';
             }
-            
-            chats.push({
-              id: chatId,
-              name: chatName,
-              type: chat.type,
-              participants: chat.participants,
-              lastMessage: chat.lastMessage,
-              lastMessageTime: chat.lastMessageTime ? new Date(chat.lastMessageTime) : undefined
-            });
           }
+          
+          // Для групповых чатов без названия
+          if (actualType === ChatType.GROUP && !chatName) {
+            chatName = 'Group Chat';
+          }
+          
+          const chatObject: Chat = {
+            id: chatId,
+            name: chatName || 'Unnamed Chat',
+            type: actualType,
+            participants: chat.participants,
+            lastMessage: chat.lastMessage || '',
+            lastMessageTime: chat.lastMessageTime ? new Date(chat.lastMessageTime) : undefined
+          };
+          
+          console.log('✅ ADDING CHAT TO LIST:', {
+            id: chatId,
+            name: chatName,
+            type: actualType,
+            participantCount: participantCount,
+            originalType: chat.type
+          });
+          
+          chats.push(chatObject);
+        } else {
+          console.log(`❌ USER ${userId} NOT IN CHAT ${chatId}:`, {
+            participants: chat.participants ? Object.keys(chat.participants) : 'NO PARTICIPANTS',
+            userValue: chat.participants?.[userId],
+            chatType: chat.type
+          });
         }
       }
       
@@ -101,11 +145,19 @@ export class ChatService {
         return timeB - timeA;
       });
       
+      console.log('📱 FINAL CHAT LIST TO RETURN:', chats.map(c => ({ 
+        id: c.id, 
+        name: c.name, 
+        type: c.type,
+        participantCount: c.participants ? Object.keys(c.participants).length : 0
+      })));
+      
       callback(chats);
     });
   }
 
   static subscribeToMessages(chatId: string, callback: (messages: Message[]) => void) {
+    console.log('💬 Subscribing to messages for chat:', chatId);
     const messagesRef = ref(this.db, `messages/${chatId}`);
     
     return onValue(messagesRef, (snapshot) => {
@@ -113,6 +165,7 @@ export class ChatService {
       
       if (snapshot.exists()) {
         const data = snapshot.val();
+        console.log('💬 Found', Object.keys(data).length, 'messages in chat:', chatId);
         
         for (const [messageId, messageData] of Object.entries(data)) {
           const message = messageData as any;
@@ -122,14 +175,19 @@ export class ChatService {
             chatId,
             senderId: message.senderId,
             content: message.content,
-            type: message.type,
+            type: message.type || MessageType.TEXT,
             timestamp: new Date(message.timestamp),
             replyTo: message.replyTo,
             seenBy: message.seenBy || [],
             deliveredTo: message.deliveredTo || [],
-            isEdited: message.isEdited || false
+            isEdited: message.isEdited || false,
+            fileUrl: message.fileUrl,
+            fileName: message.fileName,
+            fileSize: message.fileSize
           });
         }
+      } else {
+        console.log('💬 No messages found for chat:', chatId);
       }
       
       messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
@@ -137,7 +195,16 @@ export class ChatService {
     });
   }
 
-  static async sendMessage(chatId: string, senderId: string, content: string, type: MessageType = MessageType.TEXT, replyTo?: string): Promise<void> {
+  static async sendMessage(
+    chatId: string, 
+    senderId: string, 
+    content: string, 
+    type: MessageType = MessageType.TEXT, 
+    replyTo?: string,
+    fileUrl?: string,
+    fileName?: string,
+    fileSize?: number
+  ): Promise<void> {
     const messageData = {
       chatId,
       senderId,
@@ -147,17 +214,26 @@ export class ChatService {
       replyTo: replyTo || null,
       seenBy: [senderId],
       deliveredTo: [senderId],
-      isEdited: false
+      isEdited: false,
+      fileUrl: fileUrl || null,
+      fileName: fileName || null,
+      fileSize: fileSize || null
     };
+
+    console.log('📤 Sending message:', { chatId, type, content: content.substring(0, 50) });
 
     const messageRef = push(ref(this.db, `messages/${chatId}`));
     await update(messageRef, messageData);
 
-    // Update chat's last message
+    const lastMessageText = type === MessageType.IMAGE ? '📷 Image' : 
+                           type === MessageType.FILE ? '📎 File' : content;
+
     await update(ref(this.db, `chats/${chatId}`), {
-      lastMessage: type === MessageType.TEXT ? content : `📷 ${type}`,
+      lastMessage: lastMessageText,
       lastMessageTime: serverTimestamp()
     });
+    
+    console.log('✅ Message sent successfully');
   }
 
   static async editMessage(chatId: string, messageId: string, newContent: string): Promise<void> {
@@ -167,14 +243,9 @@ export class ChatService {
     });
   }
 
-  static async deleteMessage(chatId: string, messageId: string): Promise<void> {
-    await remove(ref(this.db, `messages/${chatId}/${messageId}`));
-  }
-
   static async markMessageSeen(chatId: string, messageId: string, userId: string): Promise<void> {
     const messageRef = ref(this.db, `messages/${chatId}/${messageId}/seenBy`);
     
-    // Get current seenBy array and add user if not present
     onValue(messageRef, (snapshot) => {
       const seenBy = snapshot.val() || [];
       if (!seenBy.includes(userId)) {
@@ -184,11 +255,6 @@ export class ChatService {
         });
       }
     }, { onlyOnce: true });
-  }
-
-  static async deleteChat(chatId: string): Promise<void> {
-    await remove(ref(this.db, `chats/${chatId}`));
-    await remove(ref(this.db, `messages/${chatId}`));
   }
 
   private static async getUserName(userId: string): Promise<string | null> {

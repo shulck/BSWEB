@@ -26,13 +26,25 @@ export const store = configureStore({
           'finances/addRecord/fulfilled',
           'finances/updateRecord/fulfilled',
           'user/fetchCurrent/pending',
-          'user/fetchCurrent/fulfilled'
+          'user/fetchCurrent/fulfilled',
+          'chats/setChats',
+          'chats/setCurrentChatMessages'
         ],
-        ignoredActionsPaths: ['meta.arg', 'payload.timestamp', 'payload.lastSeen', 'payload.date'],
+        ignoredActionsPaths: [
+          'meta.arg', 
+          'payload.timestamp', 
+          'payload.lastSeen', 
+          'payload.date',
+          'payload.lastMessageTime',
+          'payload.0.lastMessageTime',
+          'payload.0.timestamp'
+        ],
         ignoredPaths: [
           'items.dates',
           'auth.user',
-          'user.currentUser.lastSeen'
+          'user.currentUser.lastSeen',
+          'chats.chats',
+          'chats.currentChatMessages'
         ],
       },
     }),

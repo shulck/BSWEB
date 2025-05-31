@@ -22,7 +22,7 @@ interface EventContact {
 interface EventFormProps {
   event?: Event | null;
   selectedDate?: Date | null;
-  onSubmit: (events: Omit<Event, 'id'>[]) => void;
+  onSubmit: (events: Omit<Event, 'id'>[], contacts?: EventContact[]) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -86,6 +86,7 @@ export const EventForm: React.FC<EventFormProps> = ({
         isPersonal: event.isPersonal,
       });
       setSchedule(event.schedule || []);
+      setIsRecurring(false);
     } else {
       const nextDay = new Date(formData.date);
       nextDay.setDate(nextDay.getDate() + 1);
@@ -173,7 +174,7 @@ export const EventForm: React.FC<EventFormProps> = ({
     if (!validateForm()) return;
 
     const events = generateRecurringEvents();
-    onSubmit(events);
+    onSubmit(events, additionalContacts);
   };
 
   const eventTypeOptions = Object.values(EventType).map(type => ({

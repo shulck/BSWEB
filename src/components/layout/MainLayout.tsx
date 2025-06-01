@@ -34,61 +34,61 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-primary-dark">
-      {/* Header with improved mobile responsiveness */}
+      {/* Header with mobile-first design */}
       <header className="glass-effect-dark border-b border-dark sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo section */}
-            <div className="flex items-center">
-              <Link to="/dashboard" className="flex items-center space-x-3" onClick={closeMobileMenu}>
-                <div className="w-10 h-10 logo-circle rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">🎸</span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            {/* Logo section - компактный для мобильных */}
+            <div className="flex items-center flex-shrink-0">
+              <Link to="/dashboard" className="flex items-center space-x-2" onClick={closeMobileMenu}>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 logo-circle rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm sm:text-lg">🎸</span>
                 </div>
-                <span className="text-xl sm:text-2xl font-bold text-accent-gradient">BandSync</span>
+                <span className="text-lg sm:text-xl lg:text-2xl font-bold text-accent-gradient hidden xs:block">BandSync</span>
               </Link>
             </div>
             
-            {/* Desktop Navigation - hidden on mobile */}
-            <nav className="hidden lg:flex space-x-1">
+            {/* Desktop Navigation - только на больших экранах */}
+            <nav className="hidden xl:flex space-x-1">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center space-x-2 px-3 xl:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                     item.current
                       ? 'bg-orange-gradient text-white shadow-dark'
                       : 'text-gray-300 hover:text-white hover:bg-surface-light'
                   }`}
                 >
-                  <span className="text-base">{item.icon}</span>
-                  <span className="hidden xl:block">{item.name}</span>
+                  <span className="text-sm">{item.icon}</span>
+                  <span className="hidden 2xl:block">{item.name}</span>
                 </Link>
               ))}
             </nav>
             
-            {/* Right side - User info and mobile menu button */}
-            <div className="flex items-center space-x-4">
-              {/* User info - hidden on small screens */}
+            {/* Right side - компактный дизайн */}
+            <div className="flex items-center space-x-2">
+              {/* User info - только на desktop */}
               {currentUser && (
-                <div className="hidden md:flex items-center space-x-3 bg-surface-light rounded-full px-4 py-2 border border-dark">
-                  <div className="w-8 h-8 bg-orange-gradient rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
+                <div className="hidden lg:flex items-center space-x-2 bg-surface-light rounded-full px-3 py-1 border border-dark">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-gradient rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs sm:text-sm font-medium">
                       {currentUser.name?.charAt(0)?.toUpperCase()}
                     </span>
                   </div>
-                  <div className="text-sm">
-                    <p className="font-medium text-white">{currentUser.name}</p>
+                  <div className="text-xs hidden xl:block">
+                    <p className="font-medium text-white truncate max-w-20">{currentUser.name}</p>
                     <p className="text-xs text-gray-400">{currentUser.role}</p>
                   </div>
                 </div>
               )}
               
-              {/* Desktop logout button */}
+              {/* Desktop logout - только на больших экранах */}
               <Button 
                 variant="secondary" 
                 size="sm" 
                 onClick={handleLogout}
-                className="hidden sm:flex hover-lift-dark"
+                className="hidden lg:flex text-xs px-3 py-2"
               >
                 Logout
               </Button>
@@ -96,9 +96,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-surface-light transition-colors"
+                className="xl:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-surface-light transition-colors"
+                aria-label="Open menu"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMobileMenuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -112,20 +113,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         
         {/* Mobile navigation menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-dark bg-surface-dark">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+          <div className="xl:hidden border-t border-dark bg-surface-dark">
+            <div className="px-2 pt-2 pb-3 space-y-1 max-h-96 overflow-y-auto">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
                   onClick={closeMobileMenu}
-                  className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
                     item.current
                       ? 'bg-orange-gradient text-white'
                       : 'text-gray-300 hover:text-white hover:bg-surface-light'
                   }`}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-base">{item.icon}</span>
                   <span>{item.name}</span>
                 </Link>
               ))}
@@ -158,7 +159,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </header>
 
       {/* Main content with responsive padding */}
-      <main className="max-w-7xl mx-auto py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-3 sm:py-4 lg:py-6 px-3 sm:px-4 lg:px-8">
         {children}
       </main>
     </div>

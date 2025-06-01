@@ -269,3 +269,33 @@ body {
 .skip-link:focus {
   top: 6px;
 }
+
+/* Улучшенная адаптивность для мобильных */
+@media (max-width: 475px) {
+  .mobile-compact {
+    padding: 0.25rem !important;
+  }
+  
+  .mobile-text-xs {
+    font-size: 0.75rem !important;
+  }
+  
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+
+/* Улучшенная типографика для маленьких экранов */
+@media (max-width: 640px) {
+  .nav-compact {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+  }
+}
+
+/* Оптимизация для планшетов */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-optimized {
+    font-size: 0.875rem;
+  }
+}

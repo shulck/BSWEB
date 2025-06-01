@@ -177,21 +177,33 @@ export class EventService {
     try {
       console.log('✏️ EventService: Updating event:', eventId, event);
       
-      const eventData = {
-        ...event,
-        date: event.date ? Timestamp.fromDate(event.date) : undefined,
-        hotelCheckIn: event.hotelCheckIn ? Timestamp.fromDate(event.hotelCheckIn) : null,
-        hotelCheckOut: event.hotelCheckOut ? Timestamp.fromDate(event.hotelCheckOut) : null,
-      };
+      const updateData: any = {};
+      
+      // Копируем только определенные значения
+      Object.keys(event).forEach(key => {
+        const value = (event as any)[key];
+        if (value !== undefined) {
+          if (key === 'date' && value) {
+            updateData[key] = Timestamp.fromDate(new Date(value));
+          } else if ((key === 'hotelCheckIn' || key === 'hotelCheckOut') && value) {
+            updateData[key] = Timestamp.fromDate(new Date(value));
+          } else if (value === null || value === '') {
+            updateData[key] = null;
+          } else {
+            updateData[key] = value;
+          }
+        }
+      });
 
-      await updateDoc(doc(firestore, this.COLLECTION, eventId), eventData);
+      console.log('💾 EventService: Update data:', updateData);
+      
+      await updateDoc(doc(firestore, this.COLLECTION, eventId), updateData);
       console.log('✅ EventService: Event updated successfully');
     } catch (error) {
       console.error('❌ EventService: Error updating event:', error);
       throw error;
     }
   }
-
   static async deleteEvent(eventId: string): Promise<void> {
     try {
       console.log('🗑️ EventService: Deleting event:', eventId);

@@ -8,6 +8,7 @@ import { EventDetails } from '../components/calendar/EventDetails';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { ContactService } from '../services/contactService';
 import { Event, EventType } from '../types';
 
 type ModalType = 'create' | 'edit' | 'view' | null;
@@ -22,29 +23,11 @@ export const CalendarPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [modalType, setModalType] = useState<ModalType>(null);
   const [filterType, setFilterType] = useState<EventType | 'all'>('all');
-
   useEffect(() => {
     if (currentUser?.groupId) {
-      
-      // Сохраняем дополнительные контакты
-      if (contacts && contacts.length > 0 && eventsWithGroupId.length === 1) {
-        const eventId = eventsWithGroupId[0].id || '';
-        for (const contact of contacts) {
-          await ContactService.addContact({
-            name: contact.name,
-            email: contact.email,
-            phone: contact.phone,
-            role: contact.role,
-            groupId: currentUser.groupId,
-            eventId: eventId,
-            eventTag: eventsWithGroupId[0].title,
-            eventType: eventsWithGroupId[0].type
-          });
-        }
-      }      dispatch(fetchEvents(currentUser.groupId));
+      dispatch(fetchEvents(currentUser.groupId));
     }
   }, [dispatch, currentUser?.groupId]);
-
   const filteredEvents = events.filter(event => 
     filterType === 'all' || event.type === filterType
   );
@@ -122,23 +105,7 @@ export const CalendarPage: React.FC = () => {
       })).unwrap();
       setModalType(null);
       setSelectedEvent(null);
-      
-      // Сохраняем дополнительные контакты
-      if (contacts && contacts.length > 0 && eventsWithGroupId.length === 1) {
-        const eventId = eventsWithGroupId[0].id || '';
-        for (const contact of contacts) {
-          await ContactService.addContact({
-            name: contact.name,
-            email: contact.email,
-            phone: contact.phone,
-            role: contact.role,
-            groupId: currentUser.groupId,
-            eventId: eventId,
-            eventTag: eventsWithGroupId[0].title,
-            eventType: eventsWithGroupId[0].type
-          });
-        }
-      }      dispatch(fetchEvents(currentUser.groupId));
+      dispatch(fetchEvents(currentUser.groupId));      
     } catch (error) {
       console.error('Failed to update event:', error);
       alert('Failed to update event: ' + (error as Error).message);
@@ -153,23 +120,6 @@ export const CalendarPage: React.FC = () => {
         await dispatch(deleteEvent(selectedEvent.id)).unwrap();
         setModalType(null);
         setSelectedEvent(null);
-      
-      // Сохраняем дополнительные контакты
-      if (contacts && contacts.length > 0 && eventsWithGroupId.length === 1) {
-        const eventId = eventsWithGroupId[0].id || '';
-        for (const contact of contacts) {
-          await ContactService.addContact({
-            name: contact.name,
-            email: contact.email,
-            phone: contact.phone,
-            role: contact.role,
-            groupId: currentUser.groupId,
-            eventId: eventId,
-            eventTag: eventsWithGroupId[0].title,
-            eventType: eventsWithGroupId[0].type
-          });
-        }
-      }        dispatch(fetchEvents(currentUser.groupId));
       } catch (error) {
         console.error('Failed to delete event:', error);
         alert('Failed to delete event: ' + (error as Error).message);
@@ -180,7 +130,7 @@ export const CalendarPage: React.FC = () => {
   const closeModal = () => {
     setModalType(null);
     setSelectedEvent(null);
-    setSelectedDate(null);
+      dispatch(fetchEvents(currentUser.groupId));    setSelectedDate(null);
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {

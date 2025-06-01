@@ -23,11 +23,13 @@ export const CalendarPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [modalType, setModalType] = useState<ModalType>(null);
   const [filterType, setFilterType] = useState<EventType | 'all'>('all');
+
   useEffect(() => {
     if (currentUser?.groupId) {
       dispatch(fetchEvents(currentUser.groupId));
     }
   }, [dispatch, currentUser?.groupId]);
+
   const filteredEvents = events.filter(event => 
     filterType === 'all' || event.type === filterType
   );
@@ -92,17 +94,16 @@ export const CalendarPage: React.FC = () => {
     if (!selectedEvent?.id || !currentUser?.groupId || events.length === 0) return;
 
     const eventData = events[0];
-    const updatedEvent = {
-      ...eventData,
-      groupId: currentUser.groupId,
-      id: selectedEvent.id,
-    };
-
+    
     try {
       await dispatch(updateEvent({ 
         eventId: selectedEvent.id, 
-        event: updatedEvent 
+        event: {
+          ...eventData,
+          groupId: currentUser.groupId
+        }
       })).unwrap();
+      
       setModalType(null);
       setSelectedEvent(null);
       dispatch(fetchEvents(currentUser.groupId));      
@@ -120,7 +121,7 @@ export const CalendarPage: React.FC = () => {
         await dispatch(deleteEvent(selectedEvent.id)).unwrap();
         setModalType(null);
         setSelectedEvent(null);
-      dispatch(fetchEvents(currentUser.groupId));        dispatch(fetchEvents(currentUser.groupId));
+        dispatch(fetchEvents(currentUser.groupId));
       } catch (error) {
         console.error('Failed to delete event:', error);
         alert('Failed to delete event: ' + (error as Error).message);
@@ -131,7 +132,7 @@ export const CalendarPage: React.FC = () => {
   const closeModal = () => {
     setModalType(null);
     setSelectedEvent(null);
-      dispatch(fetchEvents(currentUser.groupId));    setSelectedDate(null);
+    setSelectedDate(null);
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {

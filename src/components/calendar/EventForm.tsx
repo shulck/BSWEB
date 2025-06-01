@@ -87,12 +87,16 @@ export const EventForm: React.FC<EventFormProps> = ({
       });
       setSchedule(event.schedule || []);
       setIsRecurring(false);
-    } else {
+    }
+  }, [event]);
+
+  useEffect(() => {
+    if (!event) {
       const nextDay = new Date(formData.date);
       nextDay.setDate(nextDay.getDate() + 1);
       setEndDate(nextDay);
     }
-  }, [event, formData.date]);
+  }, [formData.date, event]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

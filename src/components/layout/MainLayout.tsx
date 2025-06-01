@@ -18,41 +18,45 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', current: location.pathname === '/dashboard' },
-    { name: 'Calendar', href: '/calendar', current: location.pathname === '/calendar' },
-    { name: 'Chat', href: '/chat', current: location.pathname === '/chat' },
-    { name: 'Tasks', href: '/tasks', current: location.pathname === '/tasks' },
-    { name: 'Setlists', href: '/setlists', current: location.pathname === '/setlists' },
-    { name: 'Finances', href: '/finances', current: location.pathname === '/finances' },
-    { name: 'Merchandise', href: '/merchandise', current: location.pathname === '/merchandise' },
-    { name: 'Contacts', href: '/contacts', current: location.pathname === '/contacts' },
-    { name: 'Groups', href: '/groups', current: location.pathname === '/groups' },
+    { name: 'Dashboard', href: '/dashboard', current: location.pathname === '/dashboard', icon: '🏠' },
+    { name: 'Calendar', href: '/calendar', current: location.pathname === '/calendar', icon: '📅' },
+    { name: 'Chat', href: '/chat', current: location.pathname === '/chat', icon: '💬' },
+    { name: 'Tasks', href: '/tasks', current: location.pathname === '/tasks', icon: '✅' },
+    { name: 'Setlists', href: '/setlists', current: location.pathname === '/setlists', icon: '🎵' },
+    { name: 'Finances', href: '/finances', current: location.pathname === '/finances', icon: '💰' },
+    { name: 'Merchandise', href: '/merchandise', current: location.pathname === '/merchandise', icon: '🛍️' },
+    { name: 'Contacts', href: '/contacts', current: location.pathname === '/contacts', icon: '📞' },
+    { name: 'Groups', href: '/groups', current: location.pathname === '/groups', icon: '👥' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-primary-dark">
+      {/* Dark Header with Glass Effect */}
+      <header className="glass-effect-dark border-b border-dark sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
-              <Link to="/dashboard" className="text-xl font-semibold text-gray-900">
-                🎸 BandSync
+              <Link to="/dashboard" className="flex items-center space-x-3">
+                <div className="w-10 h-10 logo-circle rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">🎸</span>
+                </div>
+                <span className="text-2xl font-bold text-accent-gradient">BandSync</span>
               </Link>
               
-              {/* Navigation */}
-              <nav className="hidden lg:flex space-x-4">
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex space-x-1">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       item.current
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-orange-gradient text-white shadow-dark'
+                        : 'text-gray-300 hover:text-white hover:bg-surface-light'
                     }`}
                   >
-                    {item.name}
+                    <span>{item.icon}</span>
+                    <span>{item.name}</span>
                   </Link>
                 ))}
               </nav>
@@ -60,14 +64,24 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             
             <div className="flex items-center space-x-4">
               {currentUser && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">{currentUser.name}</span>
-                  <span className="ml-2 px-2 py-1 text-xs bg-gray-100 rounded-full">
-                    {currentUser.role}
-                  </span>
+                <div className="hidden md:flex items-center space-x-3 bg-surface-light rounded-full px-4 py-2 border border-dark">
+                  <div className="w-8 h-8 bg-orange-gradient rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {currentUser.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-white">{currentUser.name}</p>
+                    <p className="text-xs text-gray-400">{currentUser.role}</p>
+                  </div>
                 </div>
               )}
-              <Button variant="secondary" size="sm" onClick={handleLogout}>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={handleLogout}
+                className="hover-lift-dark"
+              >
                 Logout
               </Button>
             </div>
@@ -75,27 +89,28 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
         
         {/* Mobile navigation */}
-        <div className="lg:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
+        <div className="lg:hidden border-t border-dark">
+          <div className="px-2 pt-2 pb-3 space-y-1 bg-surface-light">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
                   item.current
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-orange-gradient text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-surface-dark'
                 }`}
               >
-                {item.name}
+                <span>{item.icon}</span>
+                <span>{item.name}</span>
               </Link>
             ))}
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {/* Main content with dark background */}
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

@@ -1,0 +1,99 @@
+/* BandSync Dark Theme Variables */
+:root {
+  --primary-dark: #1a1a1a;
+  --secondary-dark: #2a2a2a;
+  --accent-orange: #FF6B35;
+  --accent-teal: #4ECDC4;
+  --accent-gradient: linear-gradient(135deg, #FF6B35 0%, #4ECDC4 100%);
+  --orange-gradient: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%);
+  --teal-gradient: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  --surface-dark: #242424;
+  --surface-light: rgba(255, 255, 255, 0.05);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --shadow-dark: 0 10px 25px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 20px 40px rgba(0, 0, 0, 0.4);
+  --border-dark: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark theme backgrounds */
+.bg-primary-dark {
+  background: var(--primary-dark);
+}
+
+.bg-secondary-dark {
+  background: var(--secondary-dark);
+}
+
+.bg-surface-dark {
+  background: var(--surface-dark);
+}
+
+.bg-surface-light {
+  background: var(--surface-light);
+}
+
+.bg-accent-gradient {
+  background: var(--accent-gradient);
+}
+
+.bg-orange-gradient {
+  background: var(--orange-gradient);
+}
+
+.bg-teal-gradient {
+  background: var(--teal-gradient);
+}
+
+/* Dark shadows */
+.shadow-dark {
+  box-shadow: var(--shadow-dark);
+}
+
+.shadow-medium-dark {
+  box-shadow: var(--shadow-medium);
+}
+
+/* Glass effect for dark theme */
+.glass-effect-dark {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-dark);
+}
+
+/* Hover animations */
+.hover-lift-dark {
+  transition: all 0.3s ease;
+}
+
+.hover-lift-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+/* Gradient text */
+.text-accent-gradient {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-orange {
+  color: var(--accent-orange);
+}
+
+.text-teal {
+  color: var(--accent-teal);
+}
+
+/* Custom border */
+.border-dark {
+  border-color: var(--border-dark);
+}
+
+/* Logo circle style */
+.logo-circle {
+  background: var(--orange-gradient);
+  border: 2px solid var(--accent-orange);
+}
